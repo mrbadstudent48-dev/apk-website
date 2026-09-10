@@ -80,18 +80,30 @@
     </div>
 
     <script>
-        // ================== আপনার তথ্যগুলো এখানে বসান ==================
-        const IMGBB_API_KEY = 'a3b7f162039d6ecfb5980f08165110a6'; 
-        const GITHUB_USERNAME = 'mrbadstudent48-dev'; // যেমন: jhondoe
-        const REPO_NAME = 'apk-maker'; // যেমন: apk-website
+       // ================== আপনার তথ্যগুলো এখানে বসান ==================
+        const IMGBB_API_KEY = 'আপনার_IMGBB_API_KEY'; 
+        const GITHUB_USERNAME = 'আপনার_গিটহাব_ইউজারনেম'; 
+        const REPO_NAME = 'apk-maker'; 
         // ===============================================================
 
         let terminalInterval;
+        
+        // টার্মিনাল মেসেজ আরও বাড়ানো হয়েছে, যেন ইউজারের বোরিং না লাগে
         const terminalMessages = [
-            "Authenticating secure connection...", "Analyzing target URL parameters...",
-            "Preparing Cordova builder environment...", "Generating Android Keystore...",
-            "Injecting custom UI components & icons...", "Compiling Gradle build (This takes time)...",
-            "Aligning APK packages for optimization...", "Publishing to Microsoft Global CDN..."
+            "Authenticating secure connection...", 
+            "Analyzing target URL parameters...",
+            "Preparing Cordova builder environment...", 
+            "Generating Android Keystore...",
+            "Injecting custom UI components & icons...", 
+            "Initializing Gradle Build Daemon...",
+            "Resolving Android dependencies (Please wait)...",
+            "Compiling Java & Kotlin Source Codes...",
+            "Dexing classes to Dalvik bytecode...",
+            "Processing Android XML resources...",
+            "Aligning APK packages for optimization...", 
+            "Signing the final APK securely...",
+            "Publishing to Microsoft Global CDN...",
+            "Finalizing secure download links..."
         ];
 
         function pushTerminalMsg(msg) {
@@ -107,7 +119,7 @@
             let i = 0;
             terminalInterval = setInterval(() => {
                 if(i < terminalMessages.length) { pushTerminalMsg(terminalMessages[i]); i++; }
-            }, 8000);
+            }, 8000); // প্রতি ৮ সেকেন্ডে নতুন লেখা আসবে, যা সার্ভারের টাইমের সাথে পারফেক্ট ম্যাচ হবে
         }
 
         async function startProcess() {
@@ -172,27 +184,24 @@
         }
 
         function generateDirectLinkAndQR(runId, appName) {
-            // নামের মাঝখানের স্পেসগুলো ডিলিট করে URL ফ্রেন্ডলি করা হচ্ছে (YML ফাইলের মতো)
-            const safeAppName = appName.replace(/[^A-Za-z0-9_-]/g, '');
+            // YML ফাইলের মতো এখানেও নামটিকে ক্লিন করা হচ্ছে (স্পেস রিমুভ)
+            let safeAppName = appName.replace(/[^A-Za-z0-9_-]/g, '');
+            if(!safeAppName) safeAppName = "App"; // যদি ভুলবশত শুধু স্পেস দেয়
             
-            // ১০০% পার্মানেন্ট গিটহাব রিলিজ লিংক
-            // ১০০% পার্মানেন্ট গিটহাব রিলিজ লিংক
-        const directApkUrl = `https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/releases/download/v${runId}/app.apk`;
+            // অরিজিনাল নামের সাথে লিংক
+            const directApkUrl = `https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/releases/download/v${runId}/${safeAppName}.apk`;
 
-            // UI পরিবর্তন ও কনফেটি এনিমেশন
             document.getElementById('terminalBox').classList.add('hidden');
             document.getElementById('successBox').classList.remove('hidden');
             confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4f46e5', '#10b981', '#f59e0b', '#ec4899'] });
 
-            // ইনস্ট্যান্ট QR কোড (কোনো আপলোড ছাড়াই)
             new QRCode(document.getElementById("qrcode"), { 
                 text: directApkUrl, 
                 width: 128, height: 128, colorDark : "#1e3a8a", colorLight : "#ffffff"
             });
 
-            // ডাউনলোড বাটনের ফাংশন
             document.getElementById('downloadBtn').onclick = () => {
-                window.location.href = directApkUrl; // সরাসরি .apk ডাউনলোড হবে
+                window.location.href = directApkUrl; 
             };
         }
 
