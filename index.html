@@ -4,21 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web to APK Pro Maker</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <!-- JSZip -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- QRCode Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        /* Terminal Scrollbar Styling */
         #terminalContainer::-webkit-scrollbar { width: 5px; }
         #terminalContainer::-webkit-scrollbar-track { background: #1a202c; }
         #terminalContainer::-webkit-scrollbar-thumb { background: #48bb78; border-radius: 5px; }
@@ -45,12 +38,12 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">App Icon (PNG/JPG)</label>
                 <input type="file" id="logoFile" accept="image/png, image/jpeg" class="w-full px-4 py-2 border rounded-lg text-sm" required>
             </div>
-            <button id="buildBtn" onclick="startProcess()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg mt-4">
+            <button onclick="startProcess()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg mt-4 flex items-center justify-center gap-2">
                 <i class="fa-solid fa-rocket"></i> Build Application
             </button>
         </div>
 
-        <!-- Live Terminal (Hidden initially) -->
+        <!-- Live Terminal -->
         <div id="terminalBox" class="hidden mt-6">
             <div class="bg-gray-800 rounded-t-lg px-4 py-2 flex items-center justify-between">
                 <span class="text-xs text-gray-400 font-mono">Build Console</span>
@@ -65,18 +58,17 @@
             </div>
         </div>
 
-        <!-- Success & QR Section (Hidden initially) -->
+        <!-- Success & QR Section -->
         <div id="successBox" class="hidden mt-6 text-center">
             <h3 class="text-xl font-bold text-green-600 mb-2"><i class="fa-solid fa-circle-check"></i> APK is Ready!</h3>
             <p class="text-sm text-gray-600 mb-4">Your app has been successfully compiled.</p>
             
-            <div id="qrCodeContainer" class="flex justify-center mb-4 hidden">
+            <div id="qrCodeContainer" class="flex justify-center mb-4">
                 <div class="p-2 bg-white rounded-lg shadow-md border">
                     <div id="qrcode"></div>
                     <p class="text-xs text-gray-500 mt-2 font-semibold">Scan to download on Mobile</p>
                 </div>
             </div>
-            <p id="qrLoading" class="text-xs text-indigo-500 mb-4"><i class="fa-solid fa-spinner fa-spin"></i> Generating Mobile QR Code...</p>
 
             <button id="downloadBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg mb-2">
                 <i class="fa-solid fa-download"></i> Download APK directly
@@ -88,22 +80,18 @@
     </div>
 
     <script>
-        // === শুধু ImgBB API Key বসান ===
+        // ================== আপনার তথ্যগুলো এখানে বসান ==================
         const IMGBB_API_KEY = 'a3b7f162039d6ecfb5980f08165110a6'; 
-        // ================================
+        const GITHUB_USERNAME = 'mrbadstudent48-dev'; // যেমন: jhondoe
+        const REPO_NAME = 'apk-website'; // যেমন: apk-website
+        // ===============================================================
 
         let terminalInterval;
         const terminalMessages = [
-            "Authenticating secure connection...",
-            "Analyzing target URL parameters...",
-            "Fetching web assets and manifest...",
-            "Preparing Cordova builder environment...",
-            "Generating Android Keystore...",
-            "Injecting custom UI components & icons...",
-            "Compiling Gradle build (This takes time)...",
-            "Processing Java resources...",
-            "Aligning APK packages for optimization...",
-            "Finalizing binary output..."
+            "Authenticating secure connection...", "Analyzing target URL parameters...",
+            "Preparing Cordova builder environment...", "Generating Android Keystore...",
+            "Injecting custom UI components & icons...", "Compiling Gradle build (This takes time)...",
+            "Aligning APK packages for optimization...", "Publishing to Microsoft Global CDN..."
         ];
 
         function pushTerminalMsg(msg) {
@@ -116,14 +104,10 @@
         function startTerminalAnimation() {
             document.getElementById('inputForm').classList.add('hidden');
             document.getElementById('terminalBox').classList.remove('hidden');
-            
             let i = 0;
             terminalInterval = setInterval(() => {
-                if(i < terminalMessages.length) {
-                    pushTerminalMsg(terminalMessages[i]);
-                    i++;
-                }
-            }, 8000); // প্রতি ৮ সেকেন্ডে নতুন লেখা আসবে
+                if(i < terminalMessages.length) { pushTerminalMsg(terminalMessages[i]); i++; }
+            }, 8000);
         }
 
         async function startProcess() {
@@ -131,9 +115,7 @@
             const appName = document.getElementById('appName').value;
             const logoFile = document.getElementById('logoFile').files[0];
 
-            if(!url.startsWith('http')) { alert("URL must start with http:// or https://"); return; }
-            if(!appName) { alert("Please enter App Name"); return; }
-            if(!logoFile) { alert("Please upload a Logo"); return; }
+            if(!url || !appName || !logoFile) { alert("Please fill all fields and upload a logo!"); return; }
 
             startTerminalAnimation();
 
@@ -144,15 +126,14 @@
                 const imgUploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
                 const imgData = await imgUploadRes.json();
                 if(!imgData.success) throw new Error("Logo upload failed!");
-                const uploadedIconUrl = imgData.data.url;
 
-                pushTerminalMsg("[INFO] Triggering Vercel Serverless Build...");
+                pushTerminalMsg("[INFO] Triggering Serverless Build Engine...");
                 const triggerRes = await fetch('/api/github', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'start_build', payload: { url, app_name: appName, icon_url: uploadedIconUrl } })
+                    body: JSON.stringify({ action: 'start_build', payload: { url, app_name: appName, icon_url: imgData.data.url } })
                 });
-                if (!triggerRes.ok) throw new Error("Failed to connect to server!");
+                if (!triggerRes.ok) throw new Error("Server error!");
 
                 setTimeout(async () => {
                     const runsRes = await fetch('/api/github', {
@@ -161,7 +142,7 @@
                         body: JSON.stringify({ action: 'get_run_id' })
                     });
                     const runsData = await runsRes.json();
-                    if(runsData.workflow_runs && runsData.workflow_runs.length > 0) {
+                    if(runsData.workflow_runs.length > 0) {
                         checkStatus(runsData.workflow_runs[0].id, appName);
                     }
                 }, 10000);
@@ -172,8 +153,7 @@
         async function checkStatus(runId, appName) {
             const timer = setInterval(async () => {
                 const res = await fetch('/api/github', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'check_status', runId: runId })
                 });
                 const data = await res.json();
@@ -182,8 +162,8 @@
                     clearInterval(timer);
                     clearInterval(terminalInterval);
                     if (data.conclusion === 'success') {
-                        pushTerminalMsg("[SUCCESS] Build successful! Downloading artifact...");
-                        extractAndDownloadAPK(runId, appName);
+                        pushTerminalMsg("[SUCCESS] APK Published successfully!");
+                        generateDirectLinkAndQR(runId, appName);
                     } else {
                         showError("Build failed on server.");
                     }
@@ -191,89 +171,30 @@
             }, 15000); 
         }
 
-        async function extractAndDownloadAPK(runId, appName) {
-            try {
-                const zipRes = await fetch('/api/github', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'get_download', runId: runId })
-                });
-                
-                if (!zipRes.ok) throw new Error("File not found!");
-                pushTerminalMsg("[INFO] Extracting APK from zip...");
+        function generateDirectLinkAndQR(runId, appName) {
+            // নামের মাঝখানের স্পেসগুলো ডিলিট করে URL ফ্রেন্ডলি করা হচ্ছে (YML ফাইলের মতো)
+            const safeAppName = appName.replace(/[^A-Za-z0-9_-]/g, '');
+            
+            // ১০০% পার্মানেন্ট গিটহাব রিলিজ লিংক
+            const directApkUrl = `https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/releases/download/v${runId}/${safeAppName}.apk`;
 
-                const blob = await zipRes.blob();
-                const zip = await JSZip.loadAsync(blob);
-                const apkFilename = Object.keys(zip.files).find(name => name.endsWith('.apk'));
-                
-                if (apkFilename) {
-                    const apkBlob = await zip.files[apkFilename].async("blob");
-                    const blobUrl = window.URL.createObjectURL(apkBlob);
-                    
-                    // সাকসেস UI দেখানো
-                    document.getElementById('terminalBox').classList.add('hidden');
-                    document.getElementById('successBox').classList.remove('hidden');
-                    
-                    // কনফেটি (Confetti) এনিমেশন 
-                    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4f46e5', '#10b981', '#f59e0b', '#ec4899'] });
-                    
-                    // ডাউনলোড বাটনের ফাংশন
-                    document.getElementById('downloadBtn').onclick = () => {
-                        const a = document.createElement('a');
-                        a.href = blobUrl;
-                        a.download = `${appName}.apk`;
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                    };
+            // UI পরিবর্তন ও কনফেটি এনিমেশন
+            document.getElementById('terminalBox').classList.add('hidden');
+            document.getElementById('successBox').classList.remove('hidden');
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4f46e5', '#10b981', '#f59e0b', '#ec4899'] });
 
-                    // মোবাইল ডাউনলোডের জন্য টেম্পোরারি ক্লাউডে আপলোড ও QR কোড তৈরি (file.io)
-                    generateMobileQRCode(apkBlob, appName);
+            // ইনস্ট্যান্ট QR কোড (কোনো আপলোড ছাড়াই)
+            new QRCode(document.getElementById("qrcode"), { 
+                text: directApkUrl, 
+                width: 128, height: 128, colorDark : "#1e3a8a", colorLight : "#ffffff"
+            });
 
-                } else { throw new Error("No APK found in the archive!"); }
-            } catch (error) { showError("Download extraction failed!"); }
+            // ডাউনলোড বাটনের ফাংশন
+            document.getElementById('downloadBtn').onclick = () => {
+                window.location.href = directApkUrl; // সরাসরি .apk ডাউনলোড হবে
+            };
         }
 
-        async function generateMobileQRCode(apkBlob, appName) {
-            try {
-                document.getElementById('qrLoading').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Preparing secure QR Code...`;
-                
-                const fd = new FormData();
-                fd.append('reqtype', 'fileupload');
-                fd.append('time', '1h'); // ফাইলটি ১ ঘণ্টার জন্য সার্ভারে থাকবে
-                
-                const safeAppName = appName.replace(/\s+/g, '_'); 
-                fd.append('fileToUpload', apkBlob, `${safeAppName}.apk`);
-                
-                // Litterbox সার্ভার (CORS error দেয় না এবং খুবই ফাস্ট)
-                const response = await fetch('https://litterbox.catbox.moe/api.php', { 
-                    method: 'POST', 
-                    body: fd 
-                });
-                
-                // এটি সরাসরি .apk ফাইলের লিংক রিটার্ন করবে (কোনো JSON নয়)
-                const downloadUrl = await response.text(); 
-                
-                if(downloadUrl && downloadUrl.startsWith('http')) {
-                    document.getElementById('qrLoading').classList.add('hidden');
-                    document.getElementById('qrCodeContainer').classList.remove('hidden');
-                    
-                    document.getElementById("qrcode").innerHTML = ""; 
-                    new QRCode(document.getElementById("qrcode"), { 
-                        text: downloadUrl, 
-                        width: 128, 
-                        height: 128,
-                        colorDark : "#1e3a8a",
-                        colorLight : "#ffffff"
-                    });
-                } else {
-                    throw new Error("Upload failed");
-                }
-            } catch(e) {
-                // কোনো কারণে ফেইল হলে লোডিং সরিয়ে এরর মেসেজ দেখাবে
-                document.getElementById('qrLoading').innerHTML = "<span class='text-red-500'>❌ QR Server blocked. Please use the 'Download APK directly' button below.</span>";
-            }
-        }
         function showError(msg) {
             clearInterval(terminalInterval);
             pushTerminalMsg(`[ERROR] <span class='text-red-500'>${msg}</span>`);
