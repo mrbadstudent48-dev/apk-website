@@ -176,7 +176,8 @@
             const safeAppName = appName.replace(/[^A-Za-z0-9_-]/g, '');
             
             // ১০০% পার্মানেন্ট গিটহাব রিলিজ লিংক
-            const directApkUrl = `https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/releases/download/v${runId}/${safeAppName}.apk`;
+            // ১০০% পার্মানেন্ট গিটহাব রিলিজ লিংক
+        const directApkUrl = `https://github.com/${GITHUB_USERNAME}/${REPO_NAME}/releases/download/v${runId}/app.apk`;
 
             // UI পরিবর্তন ও কনফেটি এনিমেশন
             document.getElementById('terminalBox').classList.add('hidden');
