@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web to APK Pro Maker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4 font-sans">
+
+    <div class="glass-panel rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <div class="text-center mb-6">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2"><i class="fa-brands fa-android text-green-500"></i> App Maker Pro</h2>
+            <p class="text-gray-500 text-sm">যেকোনো ওয়েবসাইটকে প্রফেশনাল অ্যাপে রূপান্তর করুন</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ওয়েবসাইটের লিংক (URL)</label>
+                <input type="url" id="siteUrl" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="https://example.com" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">অ্যাপের নাম</label>
+                <input type="text" id="appName" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="My Website" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">অ্যাপের লোগো (PNG/JPG)</label>
+                <input type="file" id="logoFile" accept="image/png, image/jpeg" class="w-full px-4 py-2 border rounded-lg file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition" required>
+            </div>
+            <button id="buildBtn" onclick="startProcess()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg mt-4 flex justify-center items-center gap-2">
+                <i class="fa-solid fa-rocket"></i> অ্যাপ তৈরি করুন
+            </button>
+            <div id="statusBox" class="hidden mt-4 p-4 rounded-lg bg-indigo-50 border border-indigo-100 text-center">
+                <div id="loaderIcon" class="loader mb-2"></div>
+                <p id="statusText" class="text-indigo-800 font-medium text-sm">প্রস্তুত করা হচ্ছে...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === শুধু ImgBB API Key বসান ===
+        const IMGBB_API_KEY = 'a3b7f162039d6ecfb5980f08165110a6'; 
+        // ================================
+
+        async function startProcess() {
+            const url = document.getElementById('siteUrl').value;
+            const appName = document.getElementById('appName').value;
+            const logoFile = document.getElementById('logoFile').files[0];
+            const btn = document.getElementById('buildBtn');
+            const statusBox = document.getElementById('statusBox');
+            const statusText = document.getElementById('statusText');
+            const loaderIcon = document.getElementById('loaderIcon');
+
+            if(!url.startsWith('http')) { alert("লিংকটি অবশ্যই http:// বা https:// দিয়ে শুরু হতে হবে!"); return; }
+            if(!appName) { alert("অ্যাপের নাম দিন!"); return; }
+            if(!logoFile) { alert("একটি লোগো সিলেক্ট করুন!"); return; }
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            statusBox.classList.remove('hidden');
+            loaderIcon.style.display = "inline-block";
+
+            try {
+                statusText.innerText = "লোগো আপলোড করা হচ্ছে... (১/৪)";
+                const formData = new FormData();
+                formData.append('image', logoFile);
+                
+                const imgUploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+                const imgData = await imgUploadRes.json();
+                if(!imgData.success) throw new Error("লোগো আপলোডে সমস্যা হয়েছে!");
+                const uploadedIconUrl = imgData.data.url;
+
+                statusText.innerText = "সার্ভার কানেক্ট করা হচ্ছে... (২/৪)";
+                const triggerRes = await fetch('/api/github', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'start_build', payload: { url, app_name: appName, icon_url: uploadedIconUrl } })
+                });
+
+                if (!triggerRes.ok) throw new Error("সার্ভারের সাথে কানেক্ট করা যায়নি!");
+
+                statusText.innerHTML = "অ্যাপ তৈরি হচ্ছে... দয়া করে অপেক্ষা করুন (৩/৪)<br><span class='text-xs text-gray-500'>এতে ৩-৪ মিনিট সময় লাগতে পারে। পেজটি কাটবেন না।</span>";
+
+                setTimeout(async () => {
+                    const runsRes = await fetch('/api/github', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'get_run_id' })
+                    });
+                    const runsData = await runsRes.json();
+                    if(runsData.workflow_runs && runsData.workflow_runs.length > 0) {
+                        checkStatus(runsData.workflow_runs[0].id, appName);
+                    }
+                }, 10000);
+
+            } catch (error) { showError(error.message); }
+        }
+
+        async function checkStatus(runId, appName) {
+            const statusText = document.getElementById('statusText');
+            
+            const timer = setInterval(async () => {
+                const res = await fetch('/api/github', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'check_status', runId: runId })
+                });
+                const data = await res.json();
+
+                if (data.status === 'completed') {
+                    clearInterval(timer);
+                    if (data.conclusion === 'success') {
+                        statusText.innerText = "ফাইল প্রসেস করা হচ্ছে... (৪/৪)";
+                        extractAndDownloadAPK(runId, appName);
+                    } else {
+                        showError("অ্যাপ তৈরিতে সমস্যা হয়েছে! সার্ভার ওভারলোডেড।");
+                    }
+                }
+            }, 15000); 
+        }
+
+        async function extractAndDownloadAPK(runId, appName) {
+            const statusText = document.getElementById('statusText');
+            const loaderIcon = document.getElementById('loaderIcon');
+            
+            try {
+                const zipRes = await fetch('/api/github', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'get_download', runId: runId })
+                });
+                
+                if (!zipRes.ok) throw new Error("ফাইল পাওয়া যায়নি!");
+
+                const blob = await zipRes.blob();
+                const zip = await JSZip.loadAsync(blob);
+                const apkFilename = Object.keys(zip.files).find(name => name.endsWith('.apk'));
+                
+                if (apkFilename) {
+                    const apkBlob = await zip.files[apkFilename].async("blob");
+                    const blobUrl = window.URL.createObjectURL(apkBlob);
+                    
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = `${appName}.apk`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    
+                    loaderIcon.style.display = "none";
+                    statusText.innerHTML = "✅ <b class='text-green-600'>সফলভাবে ডাউনলোড শুরু হয়েছে!</b><br>আপনার সরাসরি .apk ফাইলটি রেডি।";
+                } else {
+                    throw new Error("জিপ ফাইলে APK নেই!");
+                }
+            } catch (error) {
+                showError("ডাউনলোড করতে সমস্যা হয়েছে!");
+            }
+            
+            const btn = document.getElementById('buildBtn');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function showError(msg) {
+            document.getElementById('loaderIcon').style.display = "none";
+            document.getElementById('statusText').innerHTML = `❌ <b class='text-red-500'>${msg}</b>`;
+            const btn = document.getElementById('buildBtn');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    </script>
+</body>
+</html>
